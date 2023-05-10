@@ -11,7 +11,7 @@ import CardContainer from './components/CardContainer';
 
 //Style
 import styled, { createGlobalStyle } from 'styled-components';
-import { Box, CardHeader,CardContent, Grid } from '@material-ui/core';
+import { Box, CardHeader, CardContent, Grid } from '@material-ui/core';
 
 //Icons
 import bomb from '../../assets/img/bbond-256.png';
@@ -19,12 +19,21 @@ import discordIcon from '../../assets/img/discord.svg';
 import readDocsIcon from '../../assets/img/bnb.png';
 import bombBitcoin from '../../assets/img/bomb-bitcoin-LP.png';
 
+// import stats
+import useBombStats from '../../hooks/useBombStats';
+import usebShareStats from '../../hooks/usebShareStats';
+import useBondStats from '../../hooks/useBondStats';
+import useTotalValueLocked from '../../hooks/useTotalValueLocked';
+import useCurrentEpoch from '../../hooks/useCurrentEpoch';
+import useTreasuryAllocationTimes from '../../hooks/useTreasuryAllocationTimes';
+import useCashPriceInEstimatedTWAP from '../../hooks/useCashPriceInEstimatedTWAP';
+
+
 //Bombfarm
 import Bombfarms from './components/Bombfarms';
 
 //Background image
 import BgImage from '../../assets/img/background.jpg';
-
 const BackgroundImage = createGlobalStyle`
   body {
     background: url(${BgImage}) repeat !important;
@@ -32,18 +41,73 @@ const BackgroundImage = createGlobalStyle`
     background-color: #0C1125 !important;
   }
 `;
+
 const TITLE = 'Dashboard';
 
 const Dashboard = () => {
+  const cashStat = useCashPriceInEstimatedTWAP();
+  const scalingFactor = useMemo(() => (cashStat ? Number(cashStat.priceInDollars).toFixed(4) : null), [cashStat]);
+  const { to } = useTreasuryAllocationTimes();
+
+  const lastSwap = scalingFactor;
+
+  const bombStats = useBombStats();
+  const bShareStats = usebShareStats();
+  const BBondStats = useBondStats();
+
+//   console.log(bombStats);
+//   console.log(bShareStats);
+
+  //bomb Table Stats
+  const bombPriceBNB = useMemo(() => (bombStats ? Number(bombStats.tokenInFtm).toFixed(4) : ''), [bombStats]);
+  const bombPriceDollars = useMemo(() => (bombStats ? Number(bombStats.priceInDollars).toFixed(2) : null), [bombStats]);
+  const bombCurrentSupply = useMemo(() => (bombStats ? String(bombStats.circulatingSupply) : null), [bombStats]);
+  const bombTotalSupply = useMemo(() => (bombStats ? String(bombStats.totalSupply) : null), [bombStats]);
+
+  //bBond Table Stats
+  const bBondPriceBNB = useMemo(() => (BBondStats ? Number(BBondStats.tokenInFtm).toFixed(4) : null), [BBondStats]);
+  const bBondPriceDollars = useMemo(
+    () => (BBondStats ? Number(BBondStats.priceInDollars).toFixed(2) : null),
+    [BBondStats],
+  );
+  const bBondCurrentSupply = useMemo(() => (BBondStats ? String(BBondStats.circulatingSupply) : null), [BBondStats]);
+  const bBondTotalSupply = useMemo(() => (BBondStats ? String(BBondStats.totalSupply) : null), [bShareStats]);
+
+  //bShare Table Stats
+  const bSharePriceBNB = useMemo(() => (bShareStats ? Number(bShareStats.tokenInFtm).toFixed(4) : null), [bShareStats]);
+  const bSharePriceDollars = useMemo(
+    () => (bShareStats ? Number(bShareStats.priceInDollars).toFixed(2) : null),
+    [bShareStats],
+  );
+  const bShareCurrentSupply = useMemo(
+    () => (bShareStats ? String(bShareStats.circulatingSupply) : null),
+    [bShareStats],
+  );
+  const bShareTotalSupply = useMemo(() => (bShareStats ? String(bShareStats.totalSupply) : null), [bShareStats]);
+
+  const TVL = useTotalValueLocked();
+  const currentEpoch = Number(useCurrentEpoch());
+  
+
   const bombFinanceSummaryTable = [
     {
       name: '$BOMB',
-      current: '11.4k',
-      total: '60.9k',
-      price: '$0.24',
+      current: bombCurrentSupply,
+      total: bombTotalSupply,
+      price: `$${bombPriceDollars} ${bombPriceBNB} BTCB`,
     },
-    { name: '$BSHARE', current: '11.43k', total: '8.49m', price: '0.24' },
-    { name: '$BBOND', current: '20.00k', total: '175k', price: '0.2B' },
+    {
+      name: '$BSHARE',
+      current: bShareCurrentSupply,
+      total: bShareTotalSupply,
+      price: `$${bSharePriceDollars} ${bSharePriceBNB} BTCB`,
+    },
+    {
+      name: '$BBond',
+      current: bBondCurrentSupply,
+      total: bBondTotalSupply,
+      price: `$${bBondPriceDollars} ${bBondPriceBNB} BTCB`,
+    },
   ];
 
   return (
@@ -85,20 +149,21 @@ const Dashboard = () => {
                         </tr>
                       ))}
                     </table>
-                    <div
+                    <StyledThinLine></StyledThinLine>
+                    {/* <div
                       style={{
                         height: '0.5px',
                         width: '98%',
                         marginLeft: '32px',
                         background: 'rgba(195, 197, 203, 0.75)',
                       }}
-                    ></div>
+                    ></div> */}
                   </Grid>
                   <Grid item xs={2}>
                     <div style={{ alignItems: 'end', textAlign: 'center', marginTop: '4px' }}>
                       <p>Current Epoch</p>
                       <p variant="h4" style={{ color: '#ffffff' }}>
-                        258
+                        {currentEpoch}
                       </p>
                       <div
                         style={{
@@ -110,7 +175,7 @@ const Dashboard = () => {
                       <ProgressCountdown
                         base={moment().toDate()}
                         hideBar={true}
-                        deadline={moment().toDate()}
+                        deadline={to}
                         description="Next Epoch"
                       />
                       <p>Next Epoch in</p>
@@ -123,14 +188,15 @@ const Dashboard = () => {
                       ></div>
                       <p>
                         <small>Live TWAP:</small>
-                        <small style={{ color: '#00E8A2' }}>2</small>
+                        <small style={{ color: '#00E8A2' }}>{scalingFactor}</small>
                       </p>
                       <p>
-                        <small style={{ color: '#00E8A2' }}>TVL:5000</small>
+                        <small>TVL:</small>
+                        <small style={{ color: '#00E8A2' }}>{TVL}</small>
                       </p>
                       <p>
                         <small>Last Epoch TWAP:</small>
-                        <small style={{ color: '#00E8A2' }}>1.222</small>
+                        <small style={{ color: '#00E8A2' }}>{lastSwap}</small>
                       </p>
                     </div>
                   </Grid>
@@ -250,7 +316,7 @@ const Dashboard = () => {
                 </div>
               </CardContainer>
             </Grid>
-              
+
             <Grid item xs={12}>
               <CardContainer>
                 <StyledWrapper>
@@ -295,7 +361,7 @@ const Dashboard = () => {
                           <p>Bomb is over peg</p>
                         </div>
                         <div>
-                          <Button text="Claim All" size="sm" />
+                          <Button disabled={true} text="Purchase" size="sm" />
                         </div>
                       </StyledWrapper>
                       <StyledThinLine></StyledThinLine>
@@ -331,7 +397,7 @@ const StyledThinLine = styled.div`
   background: rgba(195, 197, 203, 0.75);
 `;
 const StyledCustomBtn = styled.div`
-    height:30px;
+  height: 30px;
   padding: 4px;
   display: flex;
   align-items: center;
