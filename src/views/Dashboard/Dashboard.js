@@ -142,7 +142,7 @@ const Dashboard = () => {
                 </a>
               </Link>
               <p>
-                <Button text="Invest Now" size="lg" />
+                <Button text="Invest Now" size="sm" />
               </p>
               <Grid container spacing={2} style={{ marginBottom: '4px' }}>
                 <Grid item xs={6}>
@@ -247,6 +247,47 @@ const Dashboard = () => {
                 </div>
               </CardContainer>
             </Grid>
+            <Grid item xs={12}>
+              <CardContainer>
+                <CardHeader
+                  avatar={<img src={bomb} style={{ objectFit: 'contain', width: '42px' }} />}
+                  title="Bonds"
+                  subheader="BBOND can be purchased only on contraction periods, when TWAP of BOMB is below 1"
+                />
+                <Grid container spacing={2}>
+                  <Grid item xs={4}>
+                    <span>Current Price: (Bomb)^2</span>
+                    <p>BBond = 6.2872 BTCB</p>
+                  </Grid>
+                  <Grid item xs={3}>
+                    <span>Available to redeem: </span>
+                    <p>456</p>
+                  </Grid>
+                  <Grid item xs={5}>
+                    <div>
+                      <StyledWrapper>
+                        <div>
+                          <p>Purchase BBond</p>
+                          <p>Bomb is over peg</p>
+                        </div>
+                        <div>
+                          <Button text="Claim All" size="sm" />
+                        </div>
+                      </StyledWrapper>
+                      <StyledThinLine></StyledThinLine>
+                      <StyledWrapper>
+                        <div>
+                          <p>Redeem Bomb</p>
+                        </div>
+                        <div>
+                          <Button text="Claim All" size="sm" />
+                        </div>
+                      </StyledWrapper>
+                    </div>
+                  </Grid>
+                </Grid>
+              </CardContainer>
+            </Grid>
           </Grid>
         </Box>
       </Page>
@@ -266,6 +307,7 @@ const StyledThinLine = styled.div`
   background: rgba(195, 197, 203, 0.75);
 `;
 const StyledCustomBtn = styled.div`
+    height:30px;
   padding: 4px;
   display: flex;
   align-items: center;
