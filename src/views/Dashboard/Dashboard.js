@@ -11,13 +11,16 @@ import CardContainer from './components/CardContainer';
 
 //Style
 import styled, { createGlobalStyle } from 'styled-components';
-import { Box, CardHeader, Grid } from '@material-ui/core';
+import { Box, CardHeader,CardContent, Grid } from '@material-ui/core';
 
 //Icons
 import bomb from '../../assets/img/bbond-256.png';
 import discordIcon from '../../assets/img/discord.svg';
 import readDocsIcon from '../../assets/img/bnb.png';
 import bombBitcoin from '../../assets/img/bomb-bitcoin-LP.png';
+
+//Bombfarm
+import Bombfarms from './components/Bombfarms';
 
 //Background image
 import BgImage from '../../assets/img/background.jpg';
@@ -247,6 +250,27 @@ const Dashboard = () => {
                 </div>
               </CardContainer>
             </Grid>
+              
+            <Grid item xs={12}>
+              <CardContainer>
+                <StyledWrapper>
+                  <div>
+                    <p>Bomb Farms</p>
+                    <p>
+                      <small> Stake your LP tokens in our farms to start earning $BSHARE</small>
+                    </p>
+                  </div>
+                  <div>
+                    <Button text="Purchase" size="sm" />
+                  </div>
+                </StyledWrapper>
+
+                <CardContent>
+                  <Bombfarms />
+                </CardContent>
+              </CardContainer>
+            </Grid>
+
             <Grid item xs={12}>
               <CardContainer>
                 <CardHeader
