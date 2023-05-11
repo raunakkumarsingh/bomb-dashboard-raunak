@@ -38,6 +38,7 @@ const Bond: React.FC = () => {
   const addTransaction = useTransactionAdder();
   const bondStat = useBondStats();
   //const bombStat = useBombStats();
+
   const cashPrice = useCashPriceInLastTWAP();
 
   const bondsPurchasable = useBondsPurchasable();

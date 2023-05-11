@@ -1,10 +1,12 @@
-import React, { useEffect, useMemo, useRef } from 'react';
+import React, { useEffect,useState, useMemo, useRef,useCallback } from 'react';
 import moment from 'moment/moment';
 import Page from '../../components/Page';
 
 import { Helmet } from 'react-helmet';
 import { Link } from 'react-router-dom';
 import Button from '../../components/Button';
+import IconButton from '../../components/IconButton';
+import ExchangeCard from '../Bond/components/ExchangeCard';
 
 import ProgressCountdown from '../Boardroom/components/ProgressCountdown';
 import CardContainer from './components/CardContainer';
@@ -14,6 +16,7 @@ import styled, { createGlobalStyle } from 'styled-components';
 import { Box, CardHeader, CardContent, Grid } from '@material-ui/core';
 
 //Icons
+import MetamaskFox from '../../assets/img/metamask-fox.svg';
 import bomb from '../../assets/img/bbond-256.png';
 import discordIcon from '../../assets/img/discord.svg';
 import readDocsIcon from '../../assets/img/bnb.png';
@@ -29,88 +32,151 @@ import useTreasuryAllocationTimes from '../../hooks/useTreasuryAllocationTimes';
 import useCashPriceInEstimatedTWAP from '../../hooks/useCashPriceInEstimatedTWAP';
 
 
+//Bomb farm Import
+import { getDisplayBalance } from '../../utils/formatBalance';
+import useTotalStakedOnBoardroom from '../../hooks/useTotalStakedOnBoardroom';
+import useEarningsOnBoardroom from '../../hooks/useEarningsOnBoardroom';
+import useStakedBalanceOnBoardroom from '../../hooks/useStakedBalanceOnBoardroom';
+import useHarvestFromBoardroom from '../../hooks/useHarvestFromBoardroom';
+import useStakedTokenPriceInDollars from '../../hooks/useStakedTokenPriceInDollars';
+import useBombFinance from '../../hooks/useBombFinance';
+import useFetchBoardroomAPR from '../../hooks/useFetchBoardroomAPR';
+
 //Bombfarm
 import Bombfarms from './components/Bombfarms';
+import useStakeToBoardroom from '../../hooks/useStakeToBoardroom';
+
+import useClaimRewardCheck from '../../hooks/boardroom/useClaimRewardCheck';
+import useWithdrawCheck from '../../hooks/boardroom/useWithdrawCheck';
+import useRedeemOnBoardroom from '../../hooks/useRedeemOnBoardroom';
+
 
 //Background image
 import BgImage from '../../assets/img/background.jpg';
 const BackgroundImage = createGlobalStyle`
-  body {
+body {
     background: url(${BgImage}) repeat !important;
     background-size: cover !important;
     background-color: #0C1125 !important;
-  }
+}
 `;
 
 const TITLE = 'Dashboard';
 
 const Dashboard = () => {
-  const cashStat = useCashPriceInEstimatedTWAP();
-  const scalingFactor = useMemo(() => (cashStat ? Number(cashStat.priceInDollars).toFixed(4) : null), [cashStat]);
-  const { to } = useTreasuryAllocationTimes();
-
-  const lastSwap = scalingFactor;
-
-  const bombStats = useBombStats();
-  const bShareStats = usebShareStats();
-  const BBondStats = useBondStats();
-
-//   console.log(bombStats);
-//   console.log(bShareStats);
-
-  //bomb Table Stats
-  const bombPriceBNB = useMemo(() => (bombStats ? Number(bombStats.tokenInFtm).toFixed(4) : ''), [bombStats]);
+    const cashStat = useCashPriceInEstimatedTWAP();
+    const scalingFactor = useMemo(() => (cashStat ? Number(cashStat.priceInDollars).toFixed(4) : null), [cashStat]);
+    const { to } = useTreasuryAllocationTimes();
+    
+    const lastSwap = scalingFactor;
+    
+    const bombStats = useBombStats();
+    const bShareStats = usebShareStats();
+    const BBondStats = useBondStats();
+    
+    //   console.log(bombStats);
+    //   console.log(bShareStats);
+    
+    //bomb Table Stats
+    const bombPriceBNB = useMemo(() => (bombStats ? Number(bombStats.tokenInFtm).toFixed(4) : ''), [bombStats]);
   const bombPriceDollars = useMemo(() => (bombStats ? Number(bombStats.priceInDollars).toFixed(2) : null), [bombStats]);
   const bombCurrentSupply = useMemo(() => (bombStats ? String(bombStats.circulatingSupply) : null), [bombStats]);
   const bombTotalSupply = useMemo(() => (bombStats ? String(bombStats.totalSupply) : null), [bombStats]);
-
+  
   //bBond Table Stats
   const bBondPriceBNB = useMemo(() => (BBondStats ? Number(BBondStats.tokenInFtm).toFixed(4) : null), [BBondStats]);
   const bBondPriceDollars = useMemo(
     () => (BBondStats ? Number(BBondStats.priceInDollars).toFixed(2) : null),
     [BBondStats],
-  );
-  const bBondCurrentSupply = useMemo(() => (BBondStats ? String(BBondStats.circulatingSupply) : null), [BBondStats]);
-  const bBondTotalSupply = useMemo(() => (BBondStats ? String(BBondStats.totalSupply) : null), [bShareStats]);
-
-  //bShare Table Stats
-  const bSharePriceBNB = useMemo(() => (bShareStats ? Number(bShareStats.tokenInFtm).toFixed(4) : null), [bShareStats]);
-  const bSharePriceDollars = useMemo(
-    () => (bShareStats ? Number(bShareStats.priceInDollars).toFixed(2) : null),
-    [bShareStats],
-  );
-  const bShareCurrentSupply = useMemo(
-    () => (bShareStats ? String(bShareStats.circulatingSupply) : null),
-    [bShareStats],
-  );
-  const bShareTotalSupply = useMemo(() => (bShareStats ? String(bShareStats.totalSupply) : null), [bShareStats]);
-
-  const TVL = useTotalValueLocked();
-  const currentEpoch = Number(useCurrentEpoch());
-  
-
-  const bombFinanceSummaryTable = [
-    {
-      name: '$BOMB',
+    );
+    const bBondCurrentSupply = useMemo(() => (BBondStats ? String(BBondStats.circulatingSupply) : null), [BBondStats]);
+    const bBondTotalSupply = useMemo(() => (BBondStats ? String(BBondStats.totalSupply) : null), [bShareStats]);
+    
+    //bShare Table Stats
+    const bSharePriceBNB = useMemo(() => (bShareStats ? Number(bShareStats.tokenInFtm).toFixed(4) : null), [bShareStats]);
+    const bSharePriceDollars = useMemo(
+        () => (bShareStats ? Number(bShareStats.priceInDollars).toFixed(2) : null),
+        [bShareStats],
+        );
+        const bShareCurrentSupply = useMemo(
+            () => (bShareStats ? String(bShareStats.circulatingSupply) : null),
+            [bShareStats],
+            );
+            const bShareTotalSupply = useMemo(() => (bShareStats ? String(bShareStats.totalSupply) : null), [bShareStats]);
+            
+            const TVL = useTotalValueLocked();
+            const currentEpoch = Number(useCurrentEpoch());
+            
+            
+            const bombFinanceSummaryTable = [
+                {
+      name: 'BOMB',
       current: bombCurrentSupply,
       total: bombTotalSupply,
-      price: `$${bombPriceDollars} ${bombPriceBNB} BTCB`,
+      price: `${bombPriceDollars} ${bombPriceBNB} BTCB`,
     },
     {
-      name: '$BSHARE',
-      current: bShareCurrentSupply,
-      total: bShareTotalSupply,
-      price: `$${bSharePriceDollars} ${bSharePriceBNB} BTCB`,
+        name: 'BSHARE',
+        current: bShareCurrentSupply,
+        total: bShareTotalSupply,
+        price: `${bSharePriceDollars} ${bSharePriceBNB} BTCB`,
     },
     {
-      name: '$BBond',
-      current: bBondCurrentSupply,
-      total: bBondTotalSupply,
-      price: `$${bBondPriceDollars} ${bBondPriceBNB} BTCB`,
+        name: 'BBond',
+        current: bBondCurrentSupply,
+        total: bBondTotalSupply,
+        price: `${bBondPriceDollars} ${bBondPriceBNB} BTCB`,
     },
-  ];
+];
 
-  return (
+const tStaked = useTotalStakedOnBoardroom();
+const totalStaked=getDisplayBalance(tStaked);
+const stakBalance = useStakedBalanceOnBoardroom();
+const stakedBalance = getDisplayBalance(stakBalance);
+const earnings = useEarningsOnBoardroom();
+const totalEarning=getDisplayBalance(earnings);
+const earnedInDollars = (Number(bombPriceDollars) * Number(getDisplayBalance(earnings))).toFixed(2);
+
+const canClaimReward = useClaimRewardCheck();
+const canWithdraw = useWithdrawCheck();
+const  onRedeem = useRedeemOnBoardroom();
+const harvestBoardroom =useHarvestFromBoardroom();
+const boardroomAPR = (useFetchBoardroomAPR()/365).toFixed(2);
+const {onStake} =useStakeToBoardroom();
+
+const [isDeposit, setIsDeposit] = useState(false)
+const [isWithdraw, setIsWithdraw] = useState(false)
+const [isClaim, setIsClaim] = useState(false)
+const onDeposit = useCallback(async () => {
+  if (isDeposit) return
+  setIsDeposit(true)
+      onStake(1);
+  setIsDeposit(false)
+}, [isDeposit])
+
+const onWithdraw = useCallback(async () => {
+  if (isWithdraw) return
+  setIsWithdraw(true)
+      onRedeem(true);
+  setIsWithdraw(false)
+}, [isWithdraw])
+
+const onClaim = useCallback(async () => {
+  if (isClaim) return
+  setIsClaim(true)
+  harvestBoardroom(true);
+  setIsClaim(false)
+}, [isClaim])
+
+
+
+
+// console.log(handleStack(2.00));
+// console.log(canClaimReward)
+// console.log(canWithdraw)
+console.log(stakedBalance )
+
+return (
     <>
       <Page>
         <Helmet>
@@ -140,24 +206,18 @@ const Dashboard = () => {
                         </th>
                       </tr>
 
-                      {bombFinanceSummaryTable.map((data) => (
-                        <tr style={{ textAlign: 'center' }}>
-                          <td>{data.name}</td>
-                          <td>{data.current}</td>
-                          <td>{data.total}</td>
-                          <td>{data.price}</td>
+                      {bombFinanceSummaryTable.map((data,name) => (
+                        <tr style={{ textAlign: 'center' } } key={name}>
+                          <td>${data.name}</td>
+                          <td>${data.current}</td>
+                          <td>${data.total}</td>
+                          <td>${data.price}  <img  src={MetamaskFox}  alt="#" /></td>
+                          
                         </tr>
                       ))}
                     </table>
                     <StyledThinLine></StyledThinLine>
-                    {/* <div
-                      style={{
-                        height: '0.5px',
-                        width: '98%',
-                        marginLeft: '32px',
-                        background: 'rgba(195, 197, 203, 0.75)',
-                      }}
-                    ></div> */}
+                   
                   </Grid>
                   <Grid item xs={2}>
                     <div style={{ alignItems: 'end', textAlign: 'center', marginTop: '4px' }}>
@@ -211,7 +271,7 @@ const Dashboard = () => {
                 </a>
               </Link>
               <p>
-                <Button text="Invest Now" size="sm" />
+                <Button text="Invest Now"  size="sm" />
               </p>
               <Grid container spacing={2} style={{ marginBottom: '4px' }}>
                 <Grid item xs={6}>
@@ -220,7 +280,7 @@ const Dashboard = () => {
                       style={{ background: '#ffffff', borderRadius: '62px', marginRight: '12px' }}
                       src={discordIcon}
                     />
-                    <p>Chat on Discord</p>
+                    <a  style={{color:'black',textDecoration:'none'}}  rel="noopener noreferrer" href="http://discord.bomb.money/" target="_blank">Chat on Discord</a>
                   </StyledCustomBtn>
                 </Grid>
                 <Grid item xs={6}>
@@ -235,7 +295,8 @@ const Dashboard = () => {
                       }}
                       src={readDocsIcon}
                     />
-                    <p>Read Docs</p>
+                     <a  style={{color:'black',textDecoration:'none'}}  rel="noopener noreferrer" href="https://docs.bomb.money/" target="_blank">Read Docs</a>
+              
                   </StyledCustomBtn>
                 </Grid>
               </Grid>
@@ -243,22 +304,24 @@ const Dashboard = () => {
               <CardContainer>
                 <StyledWrapper>
                   <StyledWrapper>
-                    <img src={bombBitcoin} style={{ width: '32px' }} />
+                    <img src={bombBitcoin} style={{ width: '40px' }} />
                     <p style={{ marginLeft: '6px', marginRight: '6px' }}>BOMB-BTCB </p>
                     <Tag>
                       <p
                         style={{
                           fontSize: '12px',
                           fontWeight: 'bolder',
+                          height:'fit-content'
                         }}
                       >
                         Recommended
                       </p>
                     </Tag>
                   </StyledWrapper>
-
-                  <p>TVL:gsjhdgsjhgdjhsga</p>
+            
+                  <p>TVL: {TVL}</p>
                 </StyledWrapper>
+                &nbsp;  &nbsp;  &nbsp;  &nbsp; Stake BSHARE and earn BOMB every epoch
                 <div
                   style={{
                     height: '0.5px',
@@ -277,32 +340,47 @@ const Dashboard = () => {
                 >
                   <small>Total Stacked:</small>
                   <img src={bombBitcoin} style={{ width: '32px' }} />
-                  <small>4563</small>
+                  <small>{totalStaked}</small>
                 </div>
 
                 <Grid container spacing={2}>
                   <Grid item xs={2}>
                     <small>Daily Returns:</small>
-                    <p>2%</p>
+                    <p>{boardroomAPR}%</p>
                   </Grid>
                   <Grid item xs={2}>
-                    <small>Daily Returns:</small>
-                    <p>2%</p>
+                    <small>Your Stake</small>
+                    <p>{stakedBalance} </p>
+                    <p> {`≈ $${stakedBalance * bSharePriceDollars}`}</p>
                   </Grid>
                   <Grid item xs={3}>
-                    <small>Daily Returns:</small>
-                    <p>2%</p>
+                    <small>Earned</small>
+                    <p>{totalEarning} </p>
+                    <p>{earnedInDollars}</p>
+
+                  
                   </Grid>
                   <Grid item xs={5}>
                     <Grid container spacing={1}>
                       <Grid item xs={6}>
-                        <Button text="Deposit" size="sm" />
+                        <Button text="Deposit" onClick={onDeposit} size="sm" />
                       </Grid>
                       <Grid item xs={6}>
-                        <Button text="Withdraw" size="sm" />
+                      <Button
+                disabled={stakBalance.eq(0) || (!canWithdraw && !canClaimReward)}
+                onClick={onWithdraw}
+                size='sm'
+                text="Withdraw"
+              />
                       </Grid>
                       <Grid item xs={12}>
-                        <Button text="Claim Reward" size="sm" />
+                      <Button
+                disabled={stakBalance.eq(0) || !canClaimReward}
+                onClick={onClaim}
+                size='sm'
+                text="Claim Reward"
+              />
+             
                       </Grid>
                     </Grid>
                   </Grid>
@@ -311,7 +389,7 @@ const Dashboard = () => {
             </Grid>
             <Grid item xs={5}>
               <CardContainer>
-                <div style={{ height: '274px' }}>
+                <div style={{ height: '306px' }}>
                   <p>Latest News</p>
                 </div>
               </CardContainer>
