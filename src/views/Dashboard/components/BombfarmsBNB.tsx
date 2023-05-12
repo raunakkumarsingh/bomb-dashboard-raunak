@@ -15,7 +15,9 @@ import { getDisplayBalance } from '../../../utils/formatBalance';
 import useWithdraw from '../../../hooks/useWithdraw';
 import useStake from '../../../hooks/useStake';
 import useRedeem from '../../../hooks/useRedeem';
-const Bombfarms = () => {
+
+
+const Bombfarms = (props: { isClickBNB: any;setIsClickBNB: any }) => {
   const [banks] = useBanks();
   // console.log(banks)
   const bombFarmsStats = useShareStats();
@@ -43,7 +45,7 @@ const Bombfarms = () => {
   const { onWithdraw } = useWithdraw(contractBNB);
 
   const onDepositBNB = useCallback(async () => {
-    if (isDeposit) return;
+    if (isDeposit ) return;
     setIsDeposit(true);
     onStake('1');
     setIsDeposit(false);
@@ -57,11 +59,16 @@ const Bombfarms = () => {
   }, [isWithdraw]);
 
   const onClaimBNB = useCallback(async () => {
-    if (isClaim) return;
+    if (isClaim ) return;
     setIsClaim(true);
     onReward();
     setIsClaim(false);
   }, [isClaim]);
+
+  if(props.isClickBNB){
+    onReward();
+    props.setIsClickBNB(false)
+  }
 
   return (
     <div>
@@ -106,8 +113,8 @@ const Bombfarms = () => {
 
           <div style={{ display: 'flex' }}>
             <Button text={'Deposit'} onClick={onDepositBNB} size="sm" />
-            <Button text={'Withdraw'} disabled={!!stakedBalanceBNB} onClick={onWithdrawBNB} size="sm" />
-            <Button text={'Claim Rewards'} disabled={!!stakedBalanceBNB} onClick={onClaimBNB} size="sm" />
+            <Button text={'Withdraw'} onClick={onWithdrawBNB} size="sm" />
+            <Button text={'Claim Rewards'} onClick={onClaimBNB} size="sm" />
           </div>
         </StyledContentWrapper>
       </section>

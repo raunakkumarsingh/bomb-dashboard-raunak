@@ -1,4 +1,4 @@
-import React, { useMemo, useState, useCallback } from 'react';
+import React, { useMemo, useState, useCallback,useRef } from 'react';
 import bombBitcoin from '../../../assets/img/bomb-bitcoin-LP.png';
 import styled from 'styled-components';
 import { Typography } from '@material-ui/core';
@@ -17,7 +17,11 @@ import { getDisplayBalance } from '../../../utils/formatBalance';
 import useWithdraw from '../../../hooks/useWithdraw';
 import useStake from '../../../hooks/useStake';
 import useRedeem from '../../../hooks/useRedeem';
-const BombfarmsBTCB = () => {
+
+
+const BombfarmsBTCB = (props: { isClickBTCB: any; setIsClickBTCB: any; }) => {
+  // console.log(props.isClick);
+
   const [banks] = useBanks();
   // console.log(banks)
   const bombFarmsStats = useShareStats();
@@ -25,7 +29,7 @@ const BombfarmsBTCB = () => {
     () => (bombFarmsStats ? Number(bombFarmsStats.priceInDollars).toFixed(2) : null),
     [bombFarmsStats],
   );
-
+ 
   // BTCB POOL
   let contractBTCB = banks.filter((bank) => {
     return bank.contract === 'BombBtcbLPBShareRewardPool' && !bank.finished;
@@ -55,15 +59,25 @@ const BombfarmsBTCB = () => {
     if (isWithdraw) return;
     setIsWithdraw(true);
     onRedeem();
+    // onWithdraw("1")
     setIsWithdraw(false);
   }, [isWithdraw]);
 
   const onClaimBTCB = useCallback(async () => {
-    if (isClaim) return;
+    if (isClaim ) return;
     setIsClaim(true);
     onReward();
     setIsClaim(false);
-  }, [isClaim]);
+  }, [isClaim  ]);
+
+  if(props.isClickBTCB){
+    onClaimBTCB();
+    props.setIsClickBTCB(false)
+  }
+
+   
+
+
 
   return (
     <div>
@@ -107,8 +121,8 @@ const BombfarmsBTCB = () => {
 
           <div style={{ display: 'flex' }}>
             <Button text={'Deposit'} onClick={onDepositBTCB} size="sm" />
-            <Button text={'Withdraw'} disabled={!!stakedBalanceBTCB} onClick={onWithdrawBTCB} size="sm" />
-            <Button text={'Claim Rewards'} disabled={!!stakedBalanceBTCB} onClick={onClaimBTCB} size="sm" />
+            <Button text={'Withdraw'} onClick={onWithdrawBTCB} size="sm" />
+            <Button   text={'Claim Rewards'} onClick={onClaimBTCB} size="sm" />
           </div>
         </StyledContentWrapper>
       </section>
